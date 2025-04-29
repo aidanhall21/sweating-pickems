@@ -1,0 +1,7 @@
+# Instructions:
+# OPP = opponent team
+# LP = lineup position (if ommitted this defaults to order of each player wihtin team in file)
+# HBP and CS are optional columns
+# Must have at least 9 hitters per team
+#
+NAME,TEAM,OPP,LP,PA,1B,2B,3B,HR,K,BB,HBP,SB,CS
