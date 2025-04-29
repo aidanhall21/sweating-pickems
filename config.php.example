@@ -1,0 +1,28 @@
+<?php
+// Redis Configuration
+define('REDIS_HOST', '127.0.0.1');
+define('REDIS_PORT', 6379);
+define('REDIS_PASSWORD', ''); // Set your Redis password here if needed
+define('REDIS_DB', 0);
+define('REDIS_PREFIX', 'pickem_');
+define('REDIS_TTL', 86400); // 24 hours in seconds
+
+// Application Configuration
+define('MAX_SIMULATIONS', 2000); // Maximum number of simulations allowed
+define('UPLOAD_DIR', __DIR__ . '/uploads');
+define('DATA_DIR', __DIR__ . '/data');
+
+// Error Reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/error.log');
+
+// Session Configuration
+ini_set('session.gc_maxlifetime', 3600); // 1 hour
+ini_set('session.cookie_lifetime', 3600); // 1 hour
+
+// Memory and Time Limits
+ini_set('memory_limit', '1G');
+ini_set('max_execution_time', 300); // 5 minutes
+set_time_limit(300); 
