@@ -1,7 +1,8 @@
-# Instructions:
-# OPP = opponent team
-# LP = lineup position (if ommitted this defaults to order of each player wihtin team in file)
-# HBP and CS are optional columns
-# Must have at least 9 hitters per team
-#
+# Instructions:,,,,,,,,,,,,,
+# OPP = opponent team,,,,,,,,,,,,,
+# LP = lineup position 1-9 (if ommitted this defaults to order of each player wihtin team in file),,,,,,,,,,,,,
+# HBP and CS are optional columns,,,,,,,,,,,,,
+# Must have exactly 9 hitters per team with no overlapping LP values,,,,,,,,,,,,,
+# Must include a lineup of hitters with the same TEAM value for each pitcher found in pitcher_template,,,,,,,,,,,,,
+#,,,,,,,,,,,,,
 NAME,TEAM,OPP,LP,PA,1B,2B,3B,HR,K,BB,HBP,SB,CS

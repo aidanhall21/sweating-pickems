@@ -2,17 +2,7 @@ import sys
 import os
 import logging
 import csv
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('python_simulation.log')
-    ]
-)
-logger = logging.getLogger(__name__)
+import traceback
 
 # Get the directory of this script
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +12,24 @@ sys.path.insert(0, parent_dir)
 # Add python directory to path
 python_dir = os.path.join(parent_dir, 'python')
 sys.path.insert(0, python_dir)
+
+# Set up logging
+log_file = os.path.join(parent_dir, 'python_simulation.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(log_file)
+    ]
+)
+logger = logging.getLogger(__name__)
+
+logger.info(f"Script directory: {script_dir}")
+logger.info(f"Parent directory: {parent_dir}")
+logger.info(f"Python directory: {python_dir}")
+logger.info(f"Log file: {log_file}")
+logger.info(f"sys.path: {sys.path}")
 
 try:
     from python.simulation_handler import SimulationHandler
@@ -41,6 +49,9 @@ if __name__ == "__main__":
         pitcher_file = os.path.abspath(sys.argv[2])
         num_sims = int(sys.argv[3])
         
+        logger.info(f"Input files - Hitter: {hitter_file}, Pitcher: {pitcher_file}")
+        logger.info(f"Number of simulations: {num_sims}")
+        
         # Validate file paths
         if not os.path.exists(hitter_file):
             raise FileNotFoundError(f"Hitter file not found: {hitter_file}")
@@ -50,41 +61,16 @@ if __name__ == "__main__":
         logger.info(f"Starting simulation with: {hitter_file}, {pitcher_file}, {num_sims}")
         
         handler = SimulationHandler(hitter_file, pitcher_file, num_sims)
+        logger.info("Created SimulationHandler instance")
+        
         batter_sims, pitcher_sims = handler.run_simulation()
-        
-        # # Log first few rows of batter simulations
-        # logger.info("First few rows of batter simulations:")
-        # for i, row in enumerate(batter_sims[:3]):
-        #     logger.info(f"Row {i+1}: {row}")
-            
-        # # Log first few rows of pitcher simulations
-        # logger.info("First few rows of pitcher simulations:")
-        # for i, row in enumerate(pitcher_sims[:3]):
-        #     logger.info(f"Row {i+1}: {row}")
-        
-        # Save batter simulations to CSV
-        # with open('data/batter_simulations.csv', 'w', newline='') as f:
-        #     writer = csv.writer(f)
-        #     # Write header
-        #     writer.writerow(batter_sims[0].keys())
-        #     # Write data
-        #     for row in batter_sims:
-        #         writer.writerow(row.values())
-                
-        # # Save pitcher simulations to CSV
-        # with open('data/pitcher_simulations.csv', 'w', newline='') as f:
-        #     writer = csv.writer(f)
-        #     # Write header
-        #     writer.writerow(pitcher_sims[0].keys())
-        #     # Write data
-        #     for row in pitcher_sims:
-        #         writer.writerow(row.values())
+        logger.info("Simulation completed successfully")
         
         results = handler.process_results(batter_sims, pitcher_sims)
+        logger.info("Results processed successfully")
         
         print('{"success": true, "message": "Simulation completed successfully"}')
     except Exception as e:
-        import traceback
         logger.error(f"Error: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         print(f'{{"success": false, "error": "{str(e)}"}}')

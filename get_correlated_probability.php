@@ -20,16 +20,44 @@ try {
     $bitmaps = [];
     foreach ($data['props'] as $prop) {
         $player_key = strtolower(str_replace([' ', '-'], ['_', '#'], $prop['player']));
-        $bitmap = $redis->get("pickem_player_bitmap_" . $player_key);
         
-        if (!$bitmap) {
-            throw new Exception("Player bitmap not found for: " . $prop['player']);
-        }
-        
-        // Decode the JSON data
-        $bitmap = json_decode($bitmap, true);
-        if (!$bitmap) {
-            throw new Exception('Failed to decode bitmap JSON data');
+        // First get the metadata to see if we have chunked data
+        $metadata = $redis->get("pickem_player_bitmap_{$player_key}_metadata");
+        if ($metadata) {
+            $metadata = json_decode($metadata, true);
+            if (!$metadata) {
+                throw new Exception('Failed to decode bitmap metadata JSON');
+            }
+            
+            // Reconstruct the full bitmap from chunks
+            $full_bitmap = [];
+            for ($i = 0; $i < $metadata['num_chunks']; $i++) {
+                $chunk = $redis->get("pickem_player_bitmap_{$player_key}_chunk_{$i}");
+                if (!$chunk) {
+                    throw new Exception("Missing chunk {$i} for player: " . $prop['player']);
+                }
+                
+                $chunk_data = json_decode($chunk, true);
+                if (!$chunk_data) {
+                    throw new Exception('Failed to decode chunk JSON data');
+                }
+                
+                $full_bitmap = array_merge($full_bitmap, $chunk_data);
+            }
+            
+            $bitmap = $full_bitmap;
+        } else {
+            // Try to get non-chunked data (for backward compatibility)
+            $bitmap = $redis->get("pickem_player_bitmap_" . $player_key);
+            if (!$bitmap) {
+                throw new Exception("Player bitmap not found for: " . $prop['player']);
+            }
+            
+            // Decode the JSON data
+            $bitmap = json_decode($bitmap, true);
+            if (!$bitmap) {
+                throw new Exception('Failed to decode bitmap JSON data');
+            }
         }
         
         // Get the specific stat bitmap

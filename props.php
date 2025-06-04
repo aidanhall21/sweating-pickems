@@ -257,6 +257,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
     <link rel="manifest" href="favicon/site.webmanifest">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
         .prop-item {
             display: flex;
@@ -267,6 +268,15 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
             flex-wrap: wrap;
             flex-direction: column;
         }
+        
+        /* Style for the toggle headers */
+        .toggle-collapse {
+            cursor: pointer;
+        }
+        .toggle-collapse:hover {
+            background-color: #f8f9fa;
+        }
+        
         .prop-stat {
             flex: 1;
             display: flex;
@@ -288,13 +298,13 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
             width: 100%;
             align-items: center;
         }
-        .prop-button {
+        .prop-button, .alt-prop-button {
             padding: 0.5rem 1rem;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 0.1s;
             background-color: #f5f5f5;
             color: #424242;
             display: flex;
@@ -302,10 +312,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
             gap: 0.5rem;
             min-width: 120px;
         }
-        .prop-button:hover {
+        .prop-button:hover, .alt-prop-button:hover {
             background-color: #e0e0e0;
         }
-        .prop-button.selected {
+        .prop-button.selected, .alt-prop-button.selected {
             background-color: #007bff;
             color: white;
             outline: none;
@@ -470,7 +480,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
             border-radius: 4px;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.2s;
+            transition: all 0.1s;
             background-color: #f5f5f5;
             color: #424242;
             display: flex;
@@ -496,24 +506,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">MLB Pick'em Simulator</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="upload.php">Upload Projections</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="props.php">View Props</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php include 'header.php'; ?>
 
     <div class="container mt-4">
         <h1>Available Props</h1>
@@ -840,25 +833,34 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                 Object.entries(groupedProps).forEach(([game, gameData]) => {
                     const gameDiv = document.createElement('div');
                     gameDiv.className = 'card mb-3';
+                    // Use simple numeric IDs to avoid any issues
+                    const gameId = `collapse-${Math.floor(Math.random() * 100000)}`;
+                    
                     gameDiv.innerHTML = `
-                        <div class="card-header" data-bs-toggle="collapse" data-bs-target="#game-${btoa(game)}" style="cursor: pointer;">
+                        <div class="card-header toggle-collapse" data-target="${gameId}" style="cursor: pointer;">
                             <h5 class="mb-0">${gameData.title}</h5>
                         </div>
-                        <div class="collapse" id="game-${btoa(game)}">
+                        <div class="content-panel" id="${gameId}" style="display: none;">
                             <div class="card-body">
-                                ${Object.entries(gameData.teams).map(([team, teamData]) => `
+                                ${Object.entries(gameData.teams).map(([team, teamData]) => {
+                                    // Use simple numeric IDs to avoid any issues
+                                    const teamId = `collapse-${Math.floor(Math.random() * 100000)}`;
+                                    return `
                                     <div class="card mb-3">
-                                        <div class="card-header" data-bs-toggle="collapse" data-bs-target="#team-${btoa(team)}" style="cursor: pointer;">
+                                        <div class="card-header toggle-collapse" data-target="${teamId}" style="cursor: pointer;">
                                             <h6 class="mb-0">${teamData.name}</h6>
                                         </div>
-                                        <div class="collapse" id="team-${btoa(team)}">
+                                        <div class="content-panel" id="${teamId}" style="display: none;">
                                             <div class="card-body">
-                                                ${Object.entries(teamData.players).map(([player, playerProps]) => `
+                                                ${Object.entries(teamData.players).map(([player, playerProps]) => {
+                                                    // Use simple numeric IDs to avoid any issues
+                                                    const playerId = `collapse-${Math.floor(Math.random() * 100000)}`;
+                                                    return `
                                                     <div class="card mb-2">
-                                                        <div class="card-header" data-bs-toggle="collapse" data-bs-target="#player-${btoa(player)}" style="cursor: pointer;">
+                                                        <div class="card-header toggle-collapse" data-target="${playerId}" style="cursor: pointer;">
                                                             <h6 class="mb-0">${player}</h6>
                                                         </div>
-                                                        <div class="collapse" id="player-${btoa(player)}">
+                                                        <div class="content-panel" id="${playerId}" style="display: none;">
                                                             <div class="card-body">
                                                                 ${((currentPlayer, currentPlayerProps) => {
                                                                     // Group playerProps by stat_name + stat_value + over_under_id
@@ -883,8 +885,11 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                                                                                     </span>
                                                                                 </div>
                                                                                 <div class="prop-buttons">
-                                                                                    ${group.map(prop => `
-                                                                                        ${prop.payout_multiplier ? `
+                                                                                    ${group.map(prop => {
+                                                                                        // Create a prop ID that's consistently used for selection
+                                                                                        const propId = `${prop.id}-${prop.choice_id}`;
+                                                                                        
+                                                                                        return prop.payout_multiplier ? `
                                                                                             <button class="prop-button" data-prop='${(() => {
                                                                                                 return JSON.stringify({
                                                                                                     id: prop.id,
@@ -906,7 +911,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                                                                                                     scheduled_at: prop.scheduled_at,
                                                                                                     has_alternates: prop.has_alternates
                                                                                                 });
-                                                                                            })()}' data-prop-id="${prop.id}-${prop.choice_id}">
+                                                                                            })()}' data-prop-id="${propId}">
                                                                                                 ${prop.choice_display} (${prop.payout_multiplier}x)
                                                                                                 ${prop.simulation_probability !== undefined ? `
                                                                                                     <span class="probability simulation-prob ${prop.simulation_probability * prop.payout_multiplier < 0.549 ? 'probability-red' : prop.simulation_probability * prop.payout_multiplier < 0.577 ? 'probability-yellow' : 'probability-green'}">
@@ -914,8 +919,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                                                                                                     </span>
                                                                                                 ` : ''}
                                                                                             </button>
-                                                                                        ` : ''}
-                                                                                    `).join('')}
+                                                                                        ` : '';
+                                                                                    }).join('')}
                                                                                     ${group.some(prop => prop.has_alternates) ? `
                                                                                         <button class="alt-button btn btn-sm btn-outline-secondary" 
                                                                                             data-over-under-id="${group[0].over_under_id}" 
@@ -941,21 +946,66 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                `).join('')}
+                                                    `;
+                                                }).join('')}
                                             </div>
                                         </div>
                                     </div>
-                                `).join('')}
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                     `;
                     propsList.appendChild(gameDiv);
                 });
                 
+                // Super simple toggle click handler
+                document.addEventListener('click', function(e) {
+                    let target = e.target;
+                    
+                    // Find the toggle-collapse element (if clicked on a child element)
+                    while (target && !target.classList.contains('toggle-collapse')) {
+                        target = target.parentElement;
+                        if (!target) break;
+                    }
+                    
+                    // If we found a toggle element
+                    if (target && target.classList.contains('toggle-collapse')) {                        
+                        // Get the target panel ID
+                        const targetId = target.getAttribute('data-target');                        
+                        // Find the target panel
+                        const targetPanel = document.getElementById(targetId);
+
+                        if (targetPanel) {
+                            // Toggle display
+                            if (targetPanel.style.display === 'none') {
+                                targetPanel.style.display = 'block';
+                            } else {
+                                targetPanel.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+                
                 // Add click handlers for prop buttons
-                document.querySelectorAll('.prop-button').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const propData = JSON.parse(this.dataset.prop);
+                document.addEventListener('click', function(e) {
+                    // Find the actual button that was clicked (could be the button or a child element)
+                    let target = e.target;
+                    
+                    // If we clicked on a child element (like a span inside the button), find the parent button
+                    while (target && !target.classList.contains('prop-button') && 
+                           !target.classList.contains('alt-prop-button') && 
+                           !target.classList.contains('alt-button') && 
+                           !target.classList.contains('remove-prop')) {
+                        target = target.parentElement;
+                        if (!target) break;
+                    }
+                    
+                    if (!target) return;
+                    
+                    // Handle regular prop buttons
+                    if (target.classList.contains('prop-button')) {
+                        const propData = JSON.parse(target.dataset.prop);
                         const propId = propData.id + '-' + propData.type;
                         
                         // Check if player already has a prop selected
@@ -963,16 +1013,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                         if (existingProp) {
                             // Deselect the existing prop
                             const existingPropId = existingProp.id + '-' + existingProp.type;
-                            console.log('Regular prop: Replacing existing prop:', existingPropId, existingProp.player);
                             
                             // Find and deselect the existing button (either regular or alt)
-                            const existingButton = document.querySelector(`.prop-button[data-prop*='"id":"${existingProp.id}"'][data-prop*='"type":"${existingProp.type}"']`) ||
-                                                 document.querySelector(`.alt-prop-button[data-prop*='"id":"${existingProp.id}"'][data-prop*='"type":"${existingProp.type}"']`);
+                            const existingButton = document.querySelector(`.prop-button[data-prop-id="${existingPropId}"]`) ||
+                                                 document.querySelector(`.alt-prop-button[data-prop-id="${existingPropId}"]`);
                             if (existingButton) {
                                 existingButton.classList.remove('selected');
-                                console.log('Regular prop: Found and deselected button for', existingProp.player);
-                            } else {
-                                console.log('Regular prop: Could not find existing button to deselect for', existingProp.player);
                             }
                             
                             // Remove from selected props object and UI
@@ -980,14 +1026,13 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                             const existingElement = document.getElementById('prop-' + existingPropId);
                             if (existingElement) {
                                 existingElement.remove();
-                                console.log('Regular prop: Removed existing element from display');
                             }
                         }
                         
                         // Toggle selection state for this button
-                        if (this.classList.contains('selected')) {
+                        if (target.classList.contains('selected')) {
                             // Deselect this prop
-                            this.classList.remove('selected');
+                            target.classList.remove('selected');
                             delete selectedProps[propId];
                             document.getElementById('prop-' + propId)?.remove();
                         } else {
@@ -997,7 +1042,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                                 return;
                             }
                             
-                            this.classList.add('selected');
+                            target.classList.add('selected');
                             selectedProps[propId] = propData;
                             
                             // Create selected prop display
@@ -1018,7 +1063,184 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                         }
                         
                         updateCombinedProbability();
-                    });
+                    }
+                    // Handle alt prop buttons
+                    else if (target.classList.contains('alt-prop-button')) {
+                        const propData = JSON.parse(target.dataset.prop);
+                        const propId = propData.id + '-' + propData.type;
+                        
+                        // Check if player already has a prop selected
+                        const existingProp = Object.values(selectedProps).find(p => p.player === propData.player && (p.id + '-' + p.type) !== propId);
+                        if (existingProp) {
+                            // Deselect the existing prop
+                            const existingPropId = existingProp.id + '-' + existingProp.type;
+                            
+                            // Find and deselect the existing button (either regular or alt)
+                            const existingButton = document.querySelector(`.prop-button[data-prop-id="${existingPropId}"]`) ||
+                                                 document.querySelector(`.alt-prop-button[data-prop-id="${existingPropId}"]`);
+                            if (existingButton) {
+                                existingButton.classList.remove('selected');
+                            }
+                            
+                            // Remove from selected props object and UI
+                            delete selectedProps[existingPropId];
+                            const existingElement = document.getElementById('prop-' + existingPropId);
+                            if (existingElement) {
+                                existingElement.remove();
+                            }
+                        }
+                        
+                        // Toggle selection state for this button
+                        if (target.classList.contains('selected')) {
+                            // Deselect this prop
+                            target.classList.remove('selected');
+                            delete selectedProps[propId];
+                            document.getElementById('prop-' + propId)?.remove();
+                        } else {
+                            // Select this prop
+                            if (Object.keys(selectedProps).length >= 8) {
+                                alert('Maximum of 8 props allowed');
+                                return;
+                            }
+                            
+                            target.classList.add('selected');
+                            selectedProps[propId] = propData;
+                            
+                            // Create selected prop display
+                            const propElement = document.createElement('div');
+                            propElement.id = 'prop-' + propId;
+                            propElement.className = 'selected-prop-item';
+                            propElement.innerHTML = `
+                                <div>
+                                    <strong>${propData.player}</strong> (${propData.team})<br>
+                                    ${propData.display_stat}: ${propData.choice_display} ${propData.stat_value} (${propData.multiplier}x)
+                                </div>
+                                <span class="remove-prop" data-prop-id="${propId}">&times;</span>
+                            `;
+                            selectedPropsContainer.appendChild(propElement);
+                            
+                            // Scroll to the bottom of selected props to show the newly added item
+                            selectedPropsContainer.scrollTop = selectedPropsContainer.scrollHeight;
+                        }
+                        
+                        updateCombinedProbability();
+                    }
+                    // Handle alt button (to show/hide alternate props)
+                    else if (target.classList.contains('alt-button')) {
+                        const overUnderId = target.dataset.overUnderId;
+                        const altTargetId = target.dataset.altTarget;
+                        const altContainer = document.getElementById(altTargetId);
+                        const propData = JSON.parse(target.dataset.prop);
+                        
+                        // If already loaded, just toggle display
+                        if (altContainer.dataset.loaded === 'true') {
+                            if (altContainer.style.display === 'none' || !altContainer.style.display) {
+                                altContainer.style.display = 'block';
+                            } else {
+                                altContainer.style.display = 'none';
+                            }
+                            return;
+                        }
+                        
+                        // Mark as loading
+                        altContainer.innerHTML = '<div class="text-center my-2"><div class="spinner-border spinner-border-sm" role="status"></div> Loading alternates...</div>';
+                        altContainer.style.display = 'block';
+                        
+                        fetch(`https://api.underdogfantasy.com/v1/over_unders/${overUnderId}/alternate_projections`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                // Create HTML for alternate props
+                                let altPropsHtml = `<h6 class="mb-3">Alternate Lines</h6>`;
+                                
+                                data.projections.forEach(projection => {
+                                    altPropsHtml += `
+                                        <div class="alt-prop-row">
+                                            <span class="alt-prop-value">${projection.stat_value}</span>
+                                            <div class="alt-prop-buttons">
+                                                ${projection.options.map(option => {
+                                                    // Calculate probability for this option
+                                                    const playerName = propData.player.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '#');
+                                                    const pitcherData = window.lookupData?.pitchers?.[playerName] || window.lookupData?.pitchers?.[propData.player] || window.lookupData?.pitchers?.[propData.player.toLowerCase()];
+                                                    const batterData = window.lookupData?.batters?.[playerName] || window.lookupData?.batters?.[propData.player] || window.lookupData?.batters?.[propData.player.toLowerCase()];
+                                                    const playerData = pitcherData || batterData;
+                                                    
+                                                    let probability = null;
+                                                    if (playerData && playerData[propData.stat_name]) {
+                                                        const threshold = Math.ceil(parseFloat(projection.stat_value));
+                                                        probability = playerData[propData.stat_name][threshold] || 0;
+                                                        if (option.choice_id === 'under__') {
+                                                            probability = 1 - probability;
+                                                        }
+                                                    }
+                                                    
+                                                    // Create JSON data for the alt prop
+                                                    const altPropData = {
+                                                        id: option.id,
+                                                        options_id: option.id,
+                                                        alt_id: true,
+                                                        over_under_id: option.over_under_id,
+                                                        player: propData.player,
+                                                        team: propData.team,
+                                                        stat_name: propData.stat_name,
+                                                        display_stat: propData.display_stat,
+                                                        stat_value: projection.stat_value,
+                                                        type: option.choice_id,
+                                                        choice_display: option.choice_display,
+                                                        multiplier: option.payout_multiplier,
+                                                        simulation_probability: probability
+                                                    };
+                                                    
+                                                    // Add prop-id attribute for consistent selection
+                                                    const altPropId = `${altPropData.id}-${altPropData.type}`;
+                                                    
+                                                    return `
+                                                        <button class="alt-prop-button" 
+                                                                data-prop='${JSON.stringify(altPropData)}'
+                                                                data-prop-id="${altPropId}">
+                                                            ${option.choice_display} (${option.payout_multiplier}x)
+                                                            ${probability !== null ? `
+                                                                <span class="probability simulation-prob ${probability * option.payout_multiplier < 0.549 ? 'probability-red' : probability * option.payout_multiplier < 0.577 ? 'probability-yellow' : 'probability-green'}">
+                                                                    Sim: ${(probability * 100).toFixed(1)}%
+                                                                </span>
+                                                            ` : ''}
+                                                        </button>
+                                                    `;
+                                                }).join('')}
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                
+                                altContainer.innerHTML = altPropsHtml;
+                                altContainer.dataset.loaded = 'true';
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                altContainer.innerHTML = '<div class="alert alert-danger">Failed to load alternate props</div>';
+                            });
+                    }
+                    // Handle remove prop button (in the selected props sidebar)
+                    else if (target.classList.contains('remove-prop')) {
+                        const propId = target.dataset.propId;
+                        
+                        // Find the button that was selected for this prop
+                        const button = document.querySelector(`.prop-button[data-prop-id="${propId}"]`) || 
+                                     document.querySelector(`.alt-prop-button[data-prop-id="${propId}"]`);
+                        
+                        if (button) {
+                            button.classList.remove('selected');
+                        }
+                        
+                        delete selectedProps[propId];
+                        document.getElementById('prop-' + propId)?.remove();
+                        
+                        updateCombinedProbability();
+                    }
                 });
             }
             
@@ -1054,189 +1276,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'fetch_props') {
                         loadingSpinner.style.display = 'none';
                         fetchButton.disabled = false;
                     });
-            });
-
-            // Update the remove prop handler
-            selectedPropsContainer.addEventListener('click', function(e) {
-                if (e.target.classList.contains('remove-prop')) {
-                    const propId = e.target.dataset.propId;
-                    
-                    // Direct selector using the data-prop-id attribute
-                    const button = document.querySelector(`[data-prop-id="${propId}"]`);
-                    if (button) {
-                        button.classList.remove('selected');
-                    }
-                    
-                    delete selectedProps[propId];
-                    document.getElementById('prop-' + propId).remove();
-                    
-                    updateCombinedProbability();
-                }
-            });
-            
-            // Update the alt prop button handler
-            document.addEventListener('click', function(e) {
-                // First handle alt props
-                if (e.target.classList.contains('alt-prop-button')) {
-                    const propData = JSON.parse(e.target.dataset.prop);
-                    const propId = propData.id + '-' + propData.type;
-                    
-                    // Check if player already has a prop selected
-                    const existingProp = Object.values(selectedProps).find(p => p.player === propData.player);
-                    if (existingProp) {
-                        // Deselect the existing prop
-                        const existingPropId = existingProp.id + '-' + existingProp.type;
-                        console.log('Replacing existing prop:', existingPropId, existingProp.player);
-                        
-                        // Find and deselect the existing button (either regular or alt)
-                        const existingButton = document.querySelector(`.prop-button[data-prop*='"id":"${existingProp.id}"'][data-prop*='"type":"${existingProp.type}"']`) ||
-                                             document.querySelector(`.alt-prop-button[data-prop*='"id":"${existingProp.id}"'][data-prop*='"type":"${existingProp.type}"']`);
-                        if (existingButton) {
-                            existingButton.classList.remove('selected');
-                            console.log('Found and deselected button for', existingProp.player);
-                        } else {
-                            console.log('Could not find existing button to deselect for', existingProp.player);
-                        }
-                        
-                        // Remove from selected props object and UI
-                        delete selectedProps[existingPropId];
-                        const existingElement = document.getElementById('prop-' + existingPropId);
-                        if (existingElement) {
-                            existingElement.remove();
-                            console.log('Removed existing element from display');
-                        }
-                    }
-                    
-                    // Select the new prop
-                    if (e.target.classList.contains('selected')) {
-                        // If already selected, deselect it
-                        e.target.classList.remove('selected');
-                        delete selectedProps[propId];
-                        document.getElementById('prop-' + propId)?.remove();
-                    } else {
-                        // Otherwise select it
-                        if (Object.keys(selectedProps).length >= 8) {
-                            alert('Maximum of 8 props allowed');
-                            return;
-                        }
-                        
-                        e.target.classList.add('selected');
-                        selectedProps[propId] = propData;
-                        
-                        // Create selected prop display
-                        const propElement = document.createElement('div');
-                        propElement.id = 'prop-' + propId;
-                        propElement.className = 'selected-prop-item';
-                        propElement.innerHTML = `
-                            <div>
-                                <strong>${propData.player}</strong> (${propData.team})<br>
-                                ${propData.display_stat}: ${propData.choice_display} ${propData.stat_value} (${propData.multiplier}x)
-                            </div>
-                            <span class="remove-prop" data-prop-id="${propId}">&times;</span>
-                        `;
-                        selectedPropsContainer.appendChild(propElement);
-                        
-                        // Scroll to the bottom of selected props to show the newly added item
-                        selectedPropsContainer.scrollTop = selectedPropsContainer.scrollHeight;
-                    }
-                    
-                    updateCombinedProbability();
-                } else if (e.target.classList.contains('alt-button')) {
-                    // Alt button logic remains the same
-                    const overUnderId = e.target.dataset.overUnderId;
-                    const altTargetId = e.target.dataset.altTarget;
-                    const altContainer = document.getElementById(altTargetId);
-                    const propData = JSON.parse(e.target.dataset.prop);
-                    
-                    // If already loaded, just toggle display
-                    if (altContainer.dataset.loaded === 'true') {
-                        if (altContainer.style.display === 'none' || !altContainer.style.display) {
-                            altContainer.style.display = 'block';
-                        } else {
-                            altContainer.style.display = 'none';
-                        }
-                        return;
-                    }
-                    
-                    // Mark as loading
-                    altContainer.innerHTML = '<div class="text-center my-2"><div class="spinner-border spinner-border-sm" role="status"></div> Loading alternates...</div>';
-                    altContainer.style.display = 'block';
-                    
-                    fetch(`https://api.underdogfantasy.com/v1/over_unders/${overUnderId}/alternate_projections`)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            // Create HTML for alternate props
-                            let altPropsHtml = `<h6 class="mb-3">Alternate Lines</h6>`;
-                            
-                            data.projections.forEach(projection => {
-                                altPropsHtml += `
-                                    <div class="alt-prop-row">
-                                        <span class="alt-prop-value">${projection.stat_value}</span>
-                                        <div class="alt-prop-buttons">
-                                            ${projection.options.map(option => {
-                                                // Calculate probability for this option
-                                                const playerName = propData.player.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '#');
-                                                const pitcherData = window.lookupData?.pitchers?.[playerName] || window.lookupData?.pitchers?.[propData.player] || window.lookupData?.pitchers?.[propData.player.toLowerCase()];
-                                                const batterData = window.lookupData?.batters?.[playerName] || window.lookupData?.batters?.[propData.player] || window.lookupData?.batters?.[propData.player.toLowerCase()];
-                                                const playerData = pitcherData || batterData;
-                                                
-                                                let probability = null;
-                                                if (playerData && playerData[propData.stat_name]) {
-                                                    const threshold = Math.ceil(parseFloat(projection.stat_value));
-                                                    probability = playerData[propData.stat_name][threshold] || 0;
-                                                    if (option.choice_id === 'under__') {
-                                                        probability = 1 - probability;
-                                                    }
-                                                }
-                                                
-                                                // Create JSON data for the alt prop
-                                                const altPropData = {
-                                                    id: option.id,
-                                                    options_id: option.id,
-                                                    alt_id: true,
-                                                    over_under_id: option.over_under_id,
-                                                    player: propData.player,
-                                                    team: propData.team,
-                                                    stat_name: propData.stat_name,
-                                                    display_stat: propData.display_stat,
-                                                    stat_value: projection.stat_value,
-                                                    type: option.choice_id,
-                                                    choice_display: option.choice_display,
-                                                    multiplier: option.payout_multiplier,
-                                                    simulation_probability: probability
-                                                };
-                                                
-                                                return `
-                                                    <button class="alt-prop-button" 
-                                                            data-prop='${JSON.stringify(altPropData)}'
-                                                            data-prop-id="${altPropData.id}-${altPropData.type}">
-                                                        ${option.choice_display} (${option.payout_multiplier}x)
-                                                        ${probability !== null ? `
-                                                            <span class="probability simulation-prob ${probability * option.payout_multiplier < 0.549 ? 'probability-red' : probability * option.payout_multiplier < 0.577 ? 'probability-yellow' : 'probability-green'}">
-                                                                Sim: ${(probability * 100).toFixed(1)}%
-                                                            </span>
-                                                        ` : ''}
-                                                    </button>
-                                                `;
-                                            }).join('')}
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                            
-                            altContainer.innerHTML = altPropsHtml;
-                            altContainer.dataset.loaded = 'true';
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            altContainer.innerHTML = '<div class="alert alert-danger">Failed to load alternate props</div>';
-                        });
-                }
             });
         });
     </script>

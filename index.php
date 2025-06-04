@@ -1,3 +1,6 @@
+<?php
+require __DIR__ . '/headers.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,24 +15,9 @@
     <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="index.php">Sweating Pickems</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="upload.php">Upload Projections</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="props.php">View Props</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <?php include 'header.php'; 
+    $isLoggedIn = isset($_SESSION['user_id']);
+    ?>
 
     <div class="container mt-4">
         <h1>Welcome to Sweating Pickems</h1>
@@ -55,9 +43,77 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-star-fill"></i> Premium Weekly</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h4 class="text-primary">$9.97<small class="text-muted">/week</small></h4>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> Up to 10,000 simulations per upload</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Email support</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Cancel anytime</li>
+                        </ul>
+                        <p class="card-text text-muted">
+                            <small>Free users: 250 simulations max<br>
+                            Weekly billing, flexible cancellation</small>
+                        </p>
+                        <?php if ($isLoggedIn): ?>
+                            <a href="subscription.php" class="btn btn-primary">Subscribe Now</a>
+                        <?php else: ?>
+                            <button onclick="handleSubscribeClick()" class="btn btn-primary">Subscribe Now</button>
+                            <p class="text-muted small mt-2">
+                                <i class="bi bi-info-circle"></i> Login required to subscribe
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">How It Works</h5>
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="display-6 text-primary mb-2">1</div>
+                                <h6>Upload Projections</h6>
+                                <p class="small text-muted">Upload your hitter and pitcher projection files</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="display-6 text-primary mb-2">2</div>
+                                <h6>Run Simulations</h6>
+                                <p class="small text-muted">Our models simulate thousands of games based on your projections</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="display-6 text-primary mb-2">3</div>
+                                <h6>Compare Props</h6>
+                                <p class="small text-muted">View Underdog props alongside simulation probabilities</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="display-6 text-primary mb-2">4</div>
+                                <h6>Find Value</h6>
+                                <p class="small text-muted">Identify positive expected value betting opportunities</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script>
+        function handleSubscribeClick() {
+            if (confirm('You need to sign in with Google first to subscribe. Would you like to sign in now?')) {
+                loginWithGoogle();
+            }
+        }
+    </script>
 </body>
 </html> 

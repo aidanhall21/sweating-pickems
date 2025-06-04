@@ -17,7 +17,16 @@ class RedisHelper {
         }
         
         if (REDIS_PASSWORD) {
-            $this->redis->auth(REDIS_PASSWORD);
+            try {
+                $this->redis->auth(REDIS_PASSWORD);
+            } catch (RedisException $e) {
+                // If auth fails and the error mentions no password configured, continue without auth
+                if (strpos($e->getMessage(), 'no password') !== false || strpos($e->getMessage(), 'AUTH') !== false) {
+                    // Continue without authentication - Redis server has no password set
+                } else {
+                    throw $e;
+                }
+            }
         }
         
         $this->redis->select(REDIS_DB);

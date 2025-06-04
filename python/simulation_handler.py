@@ -466,7 +466,26 @@ class SimulationHandler:
                 player_stats['batters'][player_name]['stats']['first_home_run']['1'] = count
                 
                 # Store player's bitmap props
-                self.redis.set(f'pickem_player_bitmap_{player_name}', json.dumps(player_bitmap_props))
+                try:
+                    # Break down large data into smaller chunks
+                    chunk_size = 1000  # Number of props per chunk
+                    # Convert dictionary to list of items and chunk it
+                    items = list(player_bitmap_props.items())
+                    props_chunks = [dict(items[i:i + chunk_size]) for i in range(0, len(items), chunk_size)]
+                    
+                    for i, chunk in enumerate(props_chunks):
+                        chunk_key = f'pickem_player_bitmap_{player_name}_chunk_{i}'
+                        self.redis.set(chunk_key, json.dumps(chunk))
+                    
+                    # Store metadata about chunks
+                    chunk_metadata = {
+                        'num_chunks': len(props_chunks),
+                        'total_props': len(player_bitmap_props)
+                    }
+                    self.redis.set(f'pickem_player_bitmap_{player_name}_metadata', json.dumps(chunk_metadata))
+                except Exception as e:
+                    self.logger.error(f'Error storing player bitmap data for {player_name}: {str(e)}')
+                    raise
             
             # Process pitcher simulations
             for player_name, sims in pitcher_sims.items():
@@ -739,7 +758,26 @@ class SimulationHandler:
                 player_stats['pitchers'][player_name]['stats']['period_first_earned_run']['1'] = count
                 
                 # Store player's bitmap props
-                self.redis.set(f'pickem_player_bitmap_{player_name}', json.dumps(player_bitmap_props))
+                try:
+                    # Break down large data into smaller chunks
+                    chunk_size = 1000  # Number of props per chunk
+                    # Convert dictionary to list of items and chunk it
+                    items = list(player_bitmap_props.items())
+                    props_chunks = [dict(items[i:i + chunk_size]) for i in range(0, len(items), chunk_size)]
+                    
+                    for i, chunk in enumerate(props_chunks):
+                        chunk_key = f'pickem_player_bitmap_{player_name}_chunk_{i}'
+                        self.redis.set(chunk_key, json.dumps(chunk))
+                    
+                    # Store metadata about chunks
+                    chunk_metadata = {
+                        'num_chunks': len(props_chunks),
+                        'total_props': len(player_bitmap_props)
+                    }
+                    self.redis.set(f'pickem_player_bitmap_{player_name}_metadata', json.dumps(chunk_metadata))
+                except Exception as e:
+                    self.logger.error(f'Error storing player bitmap data for {player_name}: {str(e)}')
+                    raise
             
             # Store simulation data in Redis
             try:

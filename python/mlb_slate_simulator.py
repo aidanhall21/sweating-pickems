@@ -24,6 +24,11 @@ class MLB_Game_Simulator:
         self.pitcher_totals = collections.defaultdict(dict)
         self.hitter_totals_vs_sp = collections.defaultdict(dict)
         self.games = []
+        # Pre-allocate numpy arrays for better memory efficiency
+        self.random_cache_size = 10000
+        self.random_cache = np.random.random(self.random_cache_size)
+        self.random_cache_index = 0
+        
         self.replacement_hitter = {
             "PA": 10,
             "1B": 1.27,
@@ -39,9 +44,29 @@ class MLB_Game_Simulator:
         }
 
         self.load_projections()
+        
+    def get_random(self):
+        """Get a random number from pre-allocated cache"""
+        if self.random_cache_index >= self.random_cache_size:
+            self.random_cache = np.random.random(self.random_cache_size)
+            self.random_cache_index = 0
+        val = self.random_cache[self.random_cache_index]
+        self.random_cache_index += 1
+        return val
+
+        self.load_projections()
 
     def lower_first(self, iterator):
-        return itertools.chain([next(iterator).lower()], iterator)
+        iterator = iter(iterator)
+        # Skip comment lines
+        for line in iterator:
+            if not line.strip().startswith("#"):
+                # Lowercase the header row and yield it
+                yield line.lower()
+                break
+        # Yield the rest of the file unchanged
+        for line in iterator:
+            yield line
 
     def load_pitcher_totals(self, path):
         with open(path, encoding="utf-8-sig") as file:
@@ -178,6 +203,8 @@ class MLB_Game_Simulator:
             for row in reader:
                 if not row["hbp"] or not row["hbp"].strip():
                     row["hbp"] = "0"
+                if not row["cs"] or not row["cs"].strip():
+                    row["cs"] = "0"
                 if "2h" in row and row["2h"] == self.dh:
                     continue
                 if "ipl" in row and row["ipl"] == "false":
@@ -237,7 +264,7 @@ class MLB_Game_Simulator:
                 triple_vs_sp = adj_non_hr_hits_vs_sp * non_hr_hits_triples
                 
                 sb_vs_sp = float(row["sb"]) * pavssp * (self.pitcher_totals[team]["SB"] / self.hitter_totals_vs_sp[team]["SB"])
-                cs_vs_sp = float(row["cs"]) * pavssp * (self.pitcher_totals[team]["CS"] / self.hitter_totals_vs_sp[team]["CS"])
+                cs_vs_sp = float(row["cs"]) * pavssp * (self.pitcher_totals[team]["CS"] / (self.hitter_totals_vs_sp[team]["CS"] + 0.0001))
                 k_vs_sp = float(row["k"]) * pavssp * (self.pitcher_totals[team]["K"] / self.hitter_totals_vs_sp[team]["K"])
                 bb_vs_sp = float(row["bb"]) * pavssp * (self.pitcher_totals[team]["BB"] / self.hitter_totals_vs_sp[team]["BB"])
                 hbp_vs_sp = float(row["hbp"]) * pavssp * (self.pitcher_totals[team]["HBP"] / (self.hitter_totals_vs_sp[team]["HBP"] + 0.0001))
@@ -385,13 +412,13 @@ class MLB_Game_Simulator:
         with open(path, encoding="utf-8-sig") as file:
             reader = csv.DictReader(self.lower_first(file))
             for row in reader:
-                if row['hfa'] == 'TRUE' or row['hfa'] == 'true' or row['hfa'].startswith('H'):
+                if row['hfa'] == 'TRUE' or row['hfa'] == 'true' or row['hfa'].startswith('H') or row['hfa'].startswith('h'):
                     home_teams.add(row.get('team') or row.get('tm'))
 
         with open(path, encoding="utf-8-sig") as file:
             reader = csv.DictReader(self.lower_first(file))
             for row in reader:
-                if row['hfa'] == 'FALSE' or row['hfa'] == 'false' or row['hfa'].startswith('A'):
+                if row['hfa'] == 'FALSE' or row['hfa'] == 'false' or row['hfa'].startswith('A') or row['hfa'].startswith('a'):
                     away_team = row.get('tm') or row.get('team')
                     home_team = row.get('opp_tm') or row.get('opp')
 
@@ -415,10 +442,13 @@ class MLB_Game_Simulator:
 
         # Calculate optimal number of processes based on CPU cores and simulation size
         num_cpus = mp.cpu_count()
-        optimal_processes = max(1, min(num_cpus - 1, len(games)))
+        optimal_processes = max(1, min(num_cpus, len(games)))  # Use all available CPUs
         
-        # Create chunks of simulations for better memory management
-        chunk_size = max(1, self.num_sims // (optimal_processes * 10))
+        # Create smaller chunks for better memory management and more even distribution
+        chunk_size = max(1, min(
+            self.num_sims // (optimal_processes * 20),  # Smaller chunks for more even distribution
+            100  # Cap maximum chunk size
+        ))
         simulation_params = [(game, i) for game in games for i in range(self.num_sims)]
         
         # Use a context manager for the pool to ensure proper cleanup
@@ -515,10 +545,10 @@ class MLB_Game_Simulator:
 
                 # check to see if batter gets pinch hit for or gets removed from the game
                 remove = False
-                if np.random.random() < 0.01: 
+                if self.get_random() < 0.01: 
                     remove = True
                 if current_pitcher['Name'] == 'bullpen':
-                    if np.random.random() < current_batter['PH']:
+                    if self.get_random() < current_batter['PH']:
                         remove = True
                 else:
                     pass
@@ -626,7 +656,7 @@ class MLB_Game_Simulator:
         # Check for blowup (you may want to define this condition more precisely)
         blowup = runs_current_inning >= 9 - inning  # This is a simple heuristic, adjust as needed
 
-        if np.random.random() < .0015:
+        if self.get_random() < .0015:
             # random injury/ejection
             return True, runners.copy()
         if blowup or pitch_count >= max_pitch_count:
@@ -635,7 +665,7 @@ class MLB_Game_Simulator:
         elif pitch_count >= projected_pitch_count:
             # Simulate chance of being pulled
             pull_probability = 0.5 + 0.5 * (pitch_count - projected_pitch_count) / (max_pitch_count - projected_pitch_count)
-            if np.random.random() < pull_probability:
+            if self.get_random() < pull_probability:
                 # Pitcher gets pulled
                 return True, runners.copy()
 
@@ -736,8 +766,8 @@ class MLB_Game_Simulator:
         attempt_ratio = ((runner_stats['SB'] + runner_stats['CS']) / attempt_denominator) * 0.7 if attempt_denominator > 0 else 0
         success_ratio = runner_stats['SB'] / success_denominator if success_denominator > 0 else 0
         
-        if np.random.random() < attempt_ratio:
-            if np.random.random() < success_ratio:
+        if self.get_random() < attempt_ratio:
+            if self.get_random() < success_ratio:
                 runners[lead_runner + 1], runners[lead_runner] = runner, None
                 results_dict[runner]['bSB'] += 1
             else:
@@ -880,9 +910,9 @@ class MLB_Game_Simulator:
         attempt_ratio = ((runner_stats['SB'] + runner_stats['CS']) / attempt_denominator) * 1.2 if attempt_denominator > 0 else 0
         success_ratio = runner_stats['SB'] * 1.3 / success_denominator if success_denominator > 0 else 0
         
-        if np.random.random() < (attempt_ratio):
+        if self.get_random() < (attempt_ratio):
             # makes attempt to advance a base
-            if np.random.random() < success_ratio:
+            if self.get_random() < success_ratio:
                 # successfully advances a base
                 if lead_runner == 2:
                     pa_runs += 1
@@ -1439,7 +1469,7 @@ class MLB_Game_Simulator:
 
         # Sim to see if out was a strikeout
         batter_k_per_out = batter[outcome_indicator]['K'] / batter[outcome_indicator]['OUT']
-        k = np.random.uniform()
+        k = self.get_random()
         if k <= batter_k_per_out:
             # Log K stat
             results_dict[(batter['Name'], batter['Position'], batter['Team'])]['bK'] += 1
@@ -1480,7 +1510,7 @@ class MLB_Game_Simulator:
         base_state = [int(runners[i] is not None) for i in range(3)]
         # Handle ball in play out
         if sum(base_state) > 0:
-            r = np.random.uniform()
+            r = self.get_random()
             runners, outs, pa_runs, first_run, first_rbi, first_run_allowed = self.handle_ball_in_play_out(r, base_state, batter, pitcher, runners, outs, results_dict, pa_runs, inherited_runners, starter_info, half_inning, first_inning_complete, first_three_innings_complete, first_run_allowed, first_run, first_rbi)
 
         return runners, outs, pa_runs, first_k, first_hit, first_rbi, first_run, first_hr, first_run_allowed
@@ -1489,7 +1519,7 @@ class MLB_Game_Simulator:
         
         if base_state == [0, 0, 1]:  # Runner on third
             if r < 0.6:
-                if np.random.uniform() < 0.93:
+                if self.get_random() < 0.93:
                     # Successful sac fly
                     pa_runs += 1
                     results_dict[runners[2]]['bR'] += 1
@@ -1838,7 +1868,7 @@ class MLB_Game_Simulator:
             elif r < 0.17:
                 # Out at first, run may score
                 runners = [None, runners[0], runners[1]]
-                if np.random.uniform() < 0.95:
+                if self.get_random() < 0.95:
                     pa_runs += 1
                     results_dict[runners[2]]['bR'] += 1
                     results_dict[(batter['Name'], batter['Position'], batter['Team'])]['bRBI'] += 1

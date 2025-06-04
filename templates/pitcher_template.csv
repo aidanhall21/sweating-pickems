@@ -1,7 +1,8 @@
-# Instructions:
-# OPP = opponent team
-# HFA = home field advantage (must be true/false or H/A or Home/Away)
-# HBP and Pitch Count are optional
-# Must have data in either IP or OUTS
-#
+# Instructions:,,,,,,,,,,,
+# OPP = opponent team,,,,,,,,,,,
+# HFA = home field advantage (must be true/false or H/A or Home/Away),,,,,,,,,,,
+# HBP and Pitch Count are optional,,,,,,,,,,,
+# Must have data in either IP or OUTS,,,,,,,,,,,
+# Must include a pitcher with the same TEAM value for each lineup of hitters found in hitter_template,,,,,,,,,,,
+#,,,,,,,,,,,
 PLAYER,TEAM,OPP,HFA,IP,OUTS,K,BB,HBP,H,HR,Pitch Count (optional)
