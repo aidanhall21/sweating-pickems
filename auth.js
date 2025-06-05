@@ -64,6 +64,17 @@ onAuthStateChanged(auth, async (user) => {
             window.dispatchEvent(new CustomEvent('authStateChanged', {
                 detail: { isLoggedIn: true, user: user }
             }));
+            
+            // Refresh the page after successful login to update PHP session state
+            // Only refresh if we're not already showing the logged-in state
+            const loginButton = document.getElementById('login-button');
+            const hasSubscriptionContent = document.querySelector('.btn[onclick="handleSubscribeClick()"]');
+            
+            if (!loginButton.classList.contains('d-none') && hasSubscriptionContent) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500); // Small delay to let the user see the login success
+            }
         } catch (error) {
             console.error('Error verifying token:', error);
             // If verification fails, sign out the user
