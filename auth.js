@@ -58,6 +58,12 @@ onAuthStateChanged(auth, async (user) => {
             }
 
             const data = await response.json();
+            
+            // Check if we need to refresh BEFORE updating UI
+            const loginButton = document.getElementById('login-button');
+            const hasSubscriptionContent = document.querySelector('.btn[onclick="handleSubscribeClick()"]');
+            const shouldRefresh = loginButton && !loginButton.classList.contains('d-none') && hasSubscriptionContent;
+            
             updateUI(user);
             
             // Dispatch custom event for auth state change
@@ -66,11 +72,7 @@ onAuthStateChanged(auth, async (user) => {
             }));
             
             // Refresh the page after successful login to update PHP session state
-            // Only refresh if we're not already showing the logged-in state
-            const loginButton = document.getElementById('login-button');
-            const hasSubscriptionContent = document.querySelector('.btn[onclick="handleSubscribeClick()"]');
-            
-            if (!loginButton.classList.contains('d-none') && hasSubscriptionContent) {
+            if (shouldRefresh) {
                 setTimeout(() => {
                     window.location.reload();
                 }, 500); // Small delay to let the user see the login success
